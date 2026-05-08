@@ -1,7 +1,5 @@
 #pragma once
-#ifndef PIECE_H
-#define PIECE_H
-
+#include <iostream>
 #include <string>
 using namespace std;
 
@@ -101,5 +99,3 @@ public:
     bool   isValidMove(int toRow, int toCol) const override;
     string getName() const override { return "King"; }
 };
-
-#endif // PIECE_H
