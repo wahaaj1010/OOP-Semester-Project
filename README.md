@@ -33,7 +33,6 @@ A fully functional two-player chess game built in **C++** using core Object-Orie
 - Handle piece capture — remove captured piece from the board
 - Detect when the King is in check
 - Detect checkmate and end the game with a winner message
-- *(Stalemate / draw detection missing)*
 
 ---
 
