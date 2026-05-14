@@ -83,3 +83,80 @@ bool Game::isPathClear(int fromRow, int fromCol, int toRow, int toCol) {
 }
 
 
+// ── isInCheck ────────────────────────────────────────────────
+// Finds the King, then checks if any opponent piece can reach it.
+
+bool Game::isInCheck(char color) {
+    int kingRow = -1, kingCol = -1;
+    for (int r = 0; r < 8; r++) {
+        for (int c = 0; c < 8; c++) {
+            Piece* p = board.grid[r][c];
+            if (p && p->getColor() == color && p->getSymbol() == 'K') {
+                kingRow = r;
+                kingCol = c;
+            }
+        }
+    }
+
+    if (kingRow == -1)
+        throw invalid_argument("King not found. Game state is corrupted.");
+
+    char opponent = (color == 'W') ? 'B' : 'W';
+    for (int r = 0; r < 8; r++) {
+        for (int c = 0; c < 8; c++) {
+            Piece* p = board.grid[r][c];
+            if (!p || p->getColor() != opponent) continue;
+
+            if (p->isValidMove(kingRow, kingCol)) {
+                char sym = p->getSymbol();
+                if (sym == 'N') return true;
+                if (isPathClear(r, c, kingRow, kingCol)) return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+// ── hasAnyLegalMove ──────────────────────────────────────────
+// Tries every move for every piece of the given color.
+// Returns true if at least one move doesn't leave the King in check.
+
+bool Game::hasAnyLegalMove(char color) {
+    for (int fr = 0; fr < 8; fr++) {
+        for (int fc = 0; fc < 8; fc++) {
+            Piece* p = board.grid[fr][fc];
+            if (!p || p->getColor() != color) continue;
+
+            for (int tr = 0; tr < 8; tr++) {
+                for (int tc = 0; tc < 8; tc++) {
+                    if (!p->isValidMove(tr, tc)) continue;
+
+                    if (p->getSymbol() != 'N' && !isPathClear(fr, fc, tr, tc))
+                        continue;
+
+                    Piece* dest = board.grid[tr][tc];
+                    if (dest && dest->getColor() == color) continue;
+
+                    // Try the move
+                    board.grid[tr][tc] = p;
+                    board.grid[fr][fc] = nullptr;
+                    p->setPosition(tr, tc);
+
+                    bool stillInCheck = isInCheck(color);
+
+                    // Undo the move
+                    board.grid[fr][fc] = p;
+                    board.grid[tr][tc] = dest;
+                    p->setPosition(fr, fc);
+
+                    if (!stillInCheck) return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
+}
