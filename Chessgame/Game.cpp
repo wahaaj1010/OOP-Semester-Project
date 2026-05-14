@@ -159,4 +159,96 @@ bool Game::hasAnyLegalMove(char color) {
 }
 
 
+// ── run ──────────────────────────────────────────────────────
+// Main game loop.
+
+void Game::run() {
+    while (!gameOver) {
+        clearScreen();
+        board.display();
+
+        string playerName = (currentTurn == 'W') ? "White" : "Black";
+        cout << "\n  " << playerName << "'s turn: ";
+
+        string input;
+        getline(cin, input);
+
+        try {
+            int fromRow, fromCol, toRow, toCol;
+            parseInput(input, fromRow, fromCol, toRow, toCol);
+
+            Piece* piece = board.grid[fromRow][fromCol];
+
+            if (!piece)
+                throw invalid_argument("No piece at that square.");
+
+            if (piece->getColor() != currentTurn)
+                throw invalid_argument("That is not your piece.");
+
+            if (!piece->isValidMove(toRow, toCol))
+                throw invalid_argument("Invalid move for " + piece->getName() + ".");
+
+            if (piece->getSymbol() != 'N' && !isPathClear(fromRow, fromCol, toRow, toCol))
+                throw invalid_argument("Path is blocked.");
+
+            Piece* dest = board.grid[toRow][toCol];
+
+            if (dest && dest->getColor() == currentTurn)
+                throw invalid_argument("You cannot capture your own piece.");
+
+            // Pawn diagonal/straight capture rules
+            if (piece->getSymbol() == 'P') {
+                bool isDiagonal = (abs(toCol - fromCol) == 1);
+                if (isDiagonal && !dest)
+                    throw invalid_argument("Pawns can only move diagonally to capture.");
+                if (!isDiagonal && dest)
+                    throw invalid_argument("Pawns cannot capture straight ahead.");
+            }
+
+            // Apply the move
+            delete dest;
+            board.grid[toRow][toCol]     = piece;
+            board.grid[fromRow][fromCol] = nullptr;
+            piece->setPosition(toRow, toCol);
+
+            // Undo if move leaves own King in check
+            if (isInCheck(currentTurn)) {
+                board.grid[fromRow][fromCol] = piece;
+                board.grid[toRow][toCol]     = nullptr;
+                piece->setPosition(fromRow, fromCol);
+                throw invalid_argument("That move puts your King in check.");
+            }
+
+            // Switch turn
+            currentTurn = (currentTurn == 'W') ? 'B' : 'W';
+
+            // Check opponent status
+            if (isInCheck(currentTurn)) {
+                if (!hasAnyLegalMove(currentTurn)) {
+                    clearScreen();
+                    board.display();
+                    string winner = (currentTurn == 'W') ? "Black" : "White";
+                    cout << "\n  Checkmate!  " << winner << " wins!\n\n";
+                    cout << "  Press Enter to return to menu...\n";
+                    cin.get();
+                    gameOver = true;
+                } else {
+                    cout << "  Check!\n";
+                    cout << "  Press Enter to continue...\n";
+                    cin.get();
+                }
+            }
+
+        } catch (const invalid_argument& e) {
+            // Bad input or illegal move — show message and retry
+            cout << "  Error: " << e.what() << "\n";
+            cout << "  Press Enter to try again...\n";
+            cin.get();
+        } catch (const exception& e) {
+            // Corrupted game state — end game
+            cout << "  Fatal error: " << e.what() << "\n";
+            cin.get();
+            gameOver = true;
+        }
+    }
 }
