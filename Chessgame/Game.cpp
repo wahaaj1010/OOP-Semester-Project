@@ -130,10 +130,15 @@ bool Game::hasAnyLegalMove(char color) {
 
             for (int tr = 0; tr < 8; tr++) {
                 for (int tc = 0; tc < 8; tc++) {
-                    if (!p->isValidMove(tr, tc)) continue;
+                    // isValidMove throws on same square — skip safely
+                    try { if (!p->isValidMove(tr, tc)) continue; }
+                    catch (...) { continue; }
 
-                    if (p->getSymbol() != 'N' && !isPathClear(fr, fc, tr, tc))
-                        continue;
+                    // isPathClear throws on bad paths — skip safely
+                    try {
+                        if (p->getSymbol() != 'N' && !isPathClear(fr, fc, tr, tc))
+                            continue;
+                    } catch (...) { continue; }
 
                     Piece* dest = board.grid[tr][tc];
                     if (dest && dest->getColor() == color) continue;
@@ -143,7 +148,8 @@ bool Game::hasAnyLegalMove(char color) {
                     board.grid[fr][fc] = nullptr;
                     p->setPosition(tr, tc);
 
-                    bool stillInCheck = isInCheck(color);
+                    bool stillInCheck = false;
+                    try { stillInCheck = isInCheck(color); } catch (...) {}
 
                     // Undo the move
                     board.grid[fr][fc] = p;
@@ -205,8 +211,7 @@ void Game::run() {
                     throw invalid_argument("Pawns cannot capture straight ahead.");
             }
 
-            // Apply the move
-            delete dest;
+            // Apply the move (don't delete dest yet — needed if we must undo)
             board.grid[toRow][toCol]     = piece;
             board.grid[fromRow][fromCol] = nullptr;
             piece->setPosition(toRow, toCol);
@@ -214,10 +219,13 @@ void Game::run() {
             // Undo if move leaves own King in check
             if (isInCheck(currentTurn)) {
                 board.grid[fromRow][fromCol] = piece;
-                board.grid[toRow][toCol]     = nullptr;
+                board.grid[toRow][toCol]     = dest;   // restore captured piece
                 piece->setPosition(fromRow, fromCol);
                 throw invalid_argument("That move puts your King in check.");
             }
+
+            // Move is legal — now safe to delete the captured piece
+            delete dest;
 
             // Switch turn
             currentTurn = (currentTurn == 'W') ? 'B' : 'W';
