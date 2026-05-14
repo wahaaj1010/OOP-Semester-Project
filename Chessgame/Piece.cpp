@@ -50,7 +50,8 @@ void Piece::setPosition(int r, int c)
     col = c;
 }
 
-// Pawn
+// Pawn implementation
+
 Pawn::Pawn(char color, int row, int col) : Piece(color, row, col, 'P') {}
 
 bool Pawn::isValidMove(int toRow, int toCol) const
@@ -87,7 +88,7 @@ bool Pawn::isValidMove(int toRow, int toCol) const
     return false;
 }
 
-// rook
+// rook implementation
 
 Rook::Rook(char color, int row, int col) : Piece(color, row, col, 'R') {}
 
@@ -101,7 +102,7 @@ bool Rook::isValidMove(int toRow, int toCol) const
     return (toRow == row || toCol == col);
 }
 
-//Knight
+//Knight implementation
 
 Knight::Knight(char color, int row, int col) : Piece(color, row, col, 'N') {}
 
@@ -118,7 +119,7 @@ bool Knight::isValidMove(int toRow, int toCol) const
     return (dr == 2 && dc == 1) || (dr == 1 && dc == 2);
 }
 
-// bishop
+// bishop implementation
 
 Bishop::Bishop(char color, int row, int col) : Piece(color, row, col, 'B') {}
 
@@ -132,7 +133,7 @@ bool Bishop::isValidMove(int toRow, int toCol) const
     return abs(toRow - row) == abs(toCol - col);
 }
 
-//queen
+//queen implementation
 
 Queen::Queen(char color, int row, int col)
     : Piece(color, row, col, 'Q') {
@@ -151,7 +152,7 @@ bool Queen::isValidMove(int toRow, int toCol) const
     return (toRow == row || toCol == col || dr == dc);
 }
 
-//king
+//king implementation
 
 King::King(char color, int row, int col) : Piece(color, row, col, 'K') {}
 
