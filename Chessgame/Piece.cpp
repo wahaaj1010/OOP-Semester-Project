@@ -5,12 +5,14 @@
 
 using namespace std;
 
+//validating colour
 static void validateColor(char color)
 {
     if (color != 'W' && color != 'B')
         throw invalid_argument (string("Invalid piece color '") + color + "'. Must be white or black.");
 }
 
+//checking the rangr
 static void validateSquare(int row, int col, const string& context)
 {
     if (row < 0 || row > 7 || col < 0 || col > 7)
