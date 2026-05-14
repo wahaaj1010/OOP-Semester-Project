@@ -12,3 +12,22 @@ using namespace std;
 #define FG_BLACK   "\033[30m"         // black pieces
 
 #define FG_LABEL   "\033[38;5;111m"   // light blue labels
+
+//Constructor
+Board::Board() {
+    for (int r = 0; r < 8; r++)
+        for (int c = 0; c < 8; c++)
+            grid[r][c] = nullptr;
+}
+
+
+
+//  Destructor
+
+Board::~Board() {
+    for (int r = 0; r < 8; r++)
+        for (int c = 0; c < 8; c++) {
+            delete grid[r][c];
+            grid[r][c] = nullptr;
+        }
+}
