@@ -63,3 +63,51 @@ void Board::setup() {
     grid[7][6] = new Knight('W', 7, 6);
     grid[7][7] = new Rook('W', 7, 7);
 }
+//  display
+// Added Console display function with ranks and file labels
+void Board::display() {
+
+    cout << "\n";
+    cout << FG_LABEL << "      a    b    c    d    e    f    g    h\n" << RESET;
+
+    for (int r = 0; r < 8; r++) {
+
+        int rank = 8 - r;
+
+        cout << FG_LABEL << BOLD << "  " << rank << " " << RESET;
+
+        for (int c = 0; c < 8; c++) {
+
+            bool isLightSquare = (r + c) % 2 == 0;
+            const char* bg = isLightSquare ? BG_LIGHT : BG_DARK;
+
+            Piece* p = grid[r][c];
+
+            if (!p) {
+
+                cout << bg << "     " << RESET;
+            }
+            else {
+
+                char sym = p->getSymbol();
+
+                // Black pieces → lowercase
+                if (p->getColor() == 'B')
+                    sym = (char)(sym + 32);
+
+                const char* fg =
+                    (p->getColor() == 'W') ? FG_WHITE : FG_BLACK;
+
+                cout << bg << fg << BOLD
+                    << "  " << sym << "  "
+                    << RESET;
+            }
+        }
+
+        cout << FG_LABEL << BOLD << " " << rank << RESET << "\n";
+    }
+
+    cout << FG_LABEL << "      a    b    c    d    e    f    g    h\n"
+        << RESET << "\n";
+}
+
