@@ -3,7 +3,10 @@
 #include <string>
 using namespace std;
 
-class Piece {
+//base piece class
+//abstract class - pure virtual class
+class Piece
+{
 protected:
     char   color;    // 'W' = White,  'B' = Black
     int    row;      // 0-7  (0 = rank 8, 7 = rank 1)
@@ -26,6 +29,7 @@ public:
     void setPosition(int r, int c);
 };
 
+//pawn class
 class Pawn : public Piece {
 public:
     Pawn(char color, int row, int col);
@@ -33,6 +37,7 @@ public:
     string getName() const override { return "Pawn"; }
 };
 
+//rook class
 class Rook : public Piece {
 public:
     Rook(char color, int row, int col);
@@ -40,6 +45,7 @@ public:
     string getName() const override { return "Rook"; }
 };
 
+//kinght class
 class Knight : public Piece {
 public:
     Knight(char color, int row, int col);
@@ -47,6 +53,7 @@ public:
     string getName() const override { return "Knight"; }
 };
 
+//bishop class
 class Bishop : public Piece {
 public:
     Bishop(char color, int row, int col);
@@ -54,6 +61,7 @@ public:
     string getName() const override { return "Bishop"; }
 };
 
+//queen class
 class Queen : public Piece {
 public:
     Queen(char color, int row, int col);
@@ -61,6 +69,7 @@ public:
     string getName() const override { return "Queen"; }
 };
 
+//king class
 class King : public Piece {
 public:
     King(char color, int row, int col);
