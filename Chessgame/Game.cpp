@@ -110,6 +110,9 @@ bool Game::isInCheck(char color) {
             if (p->isValidMove(kingRow, kingCol)) {
                 char sym = p->getSymbol();
                 if (sym == 'N') return true;
+                // Pawns attack diagonally — isValidMove already checks that,
+                // so if it returned true it must be a diagonal move to the king.
+                if (sym == 'P') return true;
                 if (isPathClear(r, c, kingRow, kingCol)) return true;
             }
         }
@@ -121,6 +124,9 @@ bool Game::isInCheck(char color) {
 // ── hasAnyLegalMove ──────────────────────────────────────────
 // Tries every move for every piece of the given color.
 // Returns true if at least one move doesn't leave the King in check.
+// IMPORTANT: pawn capture/push rules are enforced here too, exactly
+// mirroring the checks done in run(), so we don't count illegal
+// pawn moves as "escapes" and miss checkmate.
 
 bool Game::hasAnyLegalMove(char color) {
     for (int fr = 0; fr < 8; fr++) {
@@ -130,20 +136,31 @@ bool Game::hasAnyLegalMove(char color) {
 
             for (int tr = 0; tr < 8; tr++) {
                 for (int tc = 0; tc < 8; tc++) {
-                    // isValidMove throws on same square — skip safely
+
+                    // 1. Piece-level move geometry
                     try { if (!p->isValidMove(tr, tc)) continue; }
                     catch (...) { continue; }
 
-                    // isPathClear throws on bad paths — skip safely
+                    // 2. Path must be clear (except Knights)
                     try {
                         if (p->getSymbol() != 'N' && !isPathClear(fr, fc, tr, tc))
                             continue;
                     } catch (...) { continue; }
 
                     Piece* dest = board.grid[tr][tc];
+
+                    // 3. Cannot capture own piece
                     if (dest && dest->getColor() == color) continue;
 
-                    // Try the move
+                    // 4. Pawn-specific capture / push rules
+                    //    (same logic as in run() — MUST match or checkmate is missed)
+                    if (p->getSymbol() == 'P') {
+                        bool isDiagonal = (abs(tc - fc) == 1);
+                        if (isDiagonal && !dest) continue;   // diagonal needs a victim
+                        if (!isDiagonal && dest) continue;   // straight push blocked
+                    }
+
+                    // 5. Try the move on the board
                     board.grid[tr][tc] = p;
                     board.grid[fr][fc] = nullptr;
                     p->setPosition(tr, tc);
@@ -151,17 +168,17 @@ bool Game::hasAnyLegalMove(char color) {
                     bool stillInCheck = false;
                     try { stillInCheck = isInCheck(color); } catch (...) {}
 
-                    // Undo the move
+                    // Undo
                     board.grid[fr][fc] = p;
                     board.grid[tr][tc] = dest;
                     p->setPosition(fr, fc);
 
-                    if (!stillInCheck) return true;
+                    if (!stillInCheck) return true;   // found at least one legal move
                 }
             }
         }
     }
-    return false;
+    return false;   // no legal move exists → checkmate (or stalemate)
 }
 
 
@@ -211,7 +228,7 @@ void Game::run() {
                     throw invalid_argument("Pawns cannot capture straight ahead.");
             }
 
-            // Apply the move (don't delete dest yet — needed if we must undo)
+            // Apply the move
             board.grid[toRow][toCol]     = piece;
             board.grid[fromRow][fromCol] = nullptr;
             piece->setPosition(toRow, toCol);
@@ -219,12 +236,12 @@ void Game::run() {
             // Undo if move leaves own King in check
             if (isInCheck(currentTurn)) {
                 board.grid[fromRow][fromCol] = piece;
-                board.grid[toRow][toCol]     = dest;   // restore captured piece
+                board.grid[toRow][toCol]     = dest;
                 piece->setPosition(fromRow, fromCol);
                 throw invalid_argument("That move puts your King in check.");
             }
 
-            // Move is legal — now safe to delete the captured piece
+            // Move is legal — delete captured piece
             delete dest;
 
             // Switch turn
@@ -233,27 +250,34 @@ void Game::run() {
             // Check opponent status
             if (isInCheck(currentTurn)) {
                 if (!hasAnyLegalMove(currentTurn)) {
+                    // ── CHECKMATE ──────────────────────────────────────────
                     clearScreen();
                     board.display();
                     string winner = (currentTurn == 'W') ? "Black" : "White";
                     cout << "\n  Checkmate!  " << winner << " wins!\n\n";
-                    cout << "  Press Enter to return to menu...\n";
-                    cin.get();
-                    gameOver = true;
+                    cout << "  Press Enter to return to menu...";
+                    cin.get();          // wait for one Enter
+                    gameOver = true;    // exits run() → returns to main menu
                 } else {
                     cout << "  Check!\n";
-                    cout << "  Press Enter to continue...\n";
+                    cout << "  Press Enter to continue...";
                     cin.get();
                 }
+            } else if (!hasAnyLegalMove(currentTurn)) {
+                // ── STALEMATE ──────────────────────────────────────────────
+                clearScreen();
+                board.display();
+                cout << "\n  Stalemate!  It's a draw.\n\n";
+                cout << "  Press Enter to return to menu...";
+                cin.get();
+                gameOver = true;
             }
 
         } catch (const invalid_argument& e) {
-            // Bad input or illegal move — show message and retry
             cout << "  Error: " << e.what() << "\n";
-            cout << "  Press Enter to try again...\n";
+            cout << "  Press Enter to try again...";
             cin.get();
         } catch (const exception& e) {
-            // Corrupted game state — end game
             cout << "  Fatal error: " << e.what() << "\n";
             cin.get();
             gameOver = true;
