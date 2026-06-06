@@ -14,6 +14,9 @@ private:
     char   currentTurn;   // 'W' or 'B'
     bool   gameOver;
 
+    // Screen
+    void clearScreen();
+
     // Input
     bool parseInput(const string& input, int& fromRow, int& fromCol,
                                          int& toRow,   int& toCol);
